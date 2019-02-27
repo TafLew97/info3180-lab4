@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block main %}
+{% include 'flash_messages.html' %}
+<div class='grid-container'>
+	{% for photo in images%}
+	<div>
+		<img src="{{ url_for('static', filename='uploads/'+photo) }}" class='grid-img'/>
+	</div>
+	{% endfor %}
+</div>
+
+{% endblock %}

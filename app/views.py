@@ -5,11 +5,12 @@ Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
 This file creates your application.
 """
 import os
-from app import app
+from app import app, allowed_images
 from flask import render_template, request, redirect, url_for, flash, session, abort
 from werkzeug.utils import secure_filename
 from app.forms import UploadForm
-
+rootdir = os.getcwd()
+print (rootdir)
 ###
 # Routing for your application.
 ###
@@ -26,23 +27,30 @@ def about():
     return render_template('about.html', name="Mary Jane")
 
 
-@app.route('/upload', methods=['POST', 'GET'])
+@app.route('/upload', methods=["POST", "GET"])
 def upload():
-    error = None
     if not session.get('logged_in'):
         abort(401)
+
+    # Instantiate your form class
+
     form = UploadForm()
+   
     # Validate file upload on submit
     if request.method == 'POST':
         if form.validate() == False:
             flash_errors(form)
         else:
-            file = form.upload.data
+        # Get file data and save to your uploads folder
+        
+        
+            file = form.photo.data
             filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            file.save(os.path.join(app.config["UPLOAD_FOLDER"],filename))
             flash('File Saved', 'success')
-            return redirect(url_for('home', error=error))
-    return render_template('upload.html', form = form, error=error)
+            return redirect(url_for('home'))
+
+    return render_template('upload.html', form = form)
 
 
 @app.route('/login', methods=['POST', 'GET'])
@@ -64,11 +72,26 @@ def logout():
     session.pop('logged_in', None)
     flash('You were logged out', 'success')
     return redirect(url_for('home'))
+    
+@app.route('/files')
+def files():
+    if not session.get('logged_in'):
+        abort(401)
+    images = get_uploaded_images()
+    return render_template('files.html', images=images)
 
 
 ###
 # The functions below should be applicable to all Flask apps.
 ###
+def get_uploaded_images():
+    uploads = []
+    for cwd, subdirs, files in os.walk(app.config['UPLOAD_FOLDER']):
+        for file in files:
+            if file.split('.')[-1] in allowed_images:
+                uploads.append(file)
+
+    return uploads
 
 # Flash errors from the form if validation fails
 def flash_errors(form):
